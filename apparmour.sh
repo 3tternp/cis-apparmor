@@ -56,16 +56,82 @@ cat <<EOF > "$OUTPUT_FILE"
   <meta charset="UTF-8">
   <title>AppArmor Audit Report</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f8f9fa; padding: 20px; }
-    table { border-collapse: collapse; width: 100%; table-layout: fixed; }
-    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; vertical-align: top; word-wrap: break-word; white-space: pre-wrap; }
-    th { background: #343a40; color: #fff; }
-    .Critical { background: #ff4d4d; }
-    .High { background: #ffa94d; }
-    .Medium { background: #fff3cd; }
-    .Low { background: #d4edda; }
-    .Pass { color: green; font-weight: bold; }
-    .Fail { color: red; font-weight: bold; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #ffffff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      table-layout: fixed;
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border: 1px solid #ddd;
+      vertical-align: top;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    th {
+      background: #34495e;
+      color: #ffffff;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .Medium {
+      background: #fff3cd;
+    }
+    .Critical {
+      background: #ff4d4d;
+      color: #fff;
+    }
+    .High {
+      background: #ffb84d;
+    }
+    .Low {
+      background: #d4edda;
+    }
+    .Fail {
+      color: #dc3545;
+      font-weight: bold;
+    }
+    .Pass {
+      color: #28a745;
+      font-weight: bold;
+    }
+    tr:hover {
+      background-color: #f5f5f5;
+    }
+    .Remediation {
+      font-style: italic;
+      color: #7f8c8d;
+    }
+
+    /* Fixed column widths */
+    th:nth-child(1), td:nth-child(1) { width: 80px; }   /* Issue ID */
+    th:nth-child(2), td:nth-child(2) { width: 150px; }  /* Issue Name */
+    th:nth-child(3), td:nth-child(3) { width: 180px; }  /* File */
+    th:nth-child(4), td:nth-child(4) { width: 90px; }   /* Risk */
+    th:nth-child(5), td:nth-child(5) { width: 100px; }  /* Fix Type */
+    th:nth-child(6), td:nth-child(6) { width: 70px; }   /* Status */
+    th:nth-child(7), td:nth-child(7) { width: 295px; }  /* Matched Line */
+    th:nth-child(8), td:nth-child(8) { width: 195px; }  /* Remediation */
   </style>
 </head>
 <body>
@@ -139,9 +205,9 @@ cat <<EOF > "$COMPLIANCE_FILE"
   <meta charset="UTF-8">
   <title>Compliance Matrix</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
-    table { border-collapse: collapse; width: 100%; background: #fff; }
-    th, td { padding: 10px; border: 1px solid #ccc; }
+    body { font-family: , sans-serif; padding: 16px; background: #f4f4f4; }
+    table { border-collapse: collapse; width: 99%; background: #fff; }
+    th, td { padding: 11px; border: 1px solid #ccc; }
     th { background-color: #343a40; color: white; }
     .Good { background: #d4edda; }
     .Partial { background: #fff3cd; }
