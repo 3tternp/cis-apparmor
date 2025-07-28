@@ -1,5 +1,22 @@
 #!/bin/bash
 
+# ----------------------
+# Banner Function
+# ----------------------
+print_banner() {
+  local border="------------------------------------------------------------"
+  echo "$border"
+  printf "%*s\n" $(((${#border} + ${#1}) / 2)) "$1"
+  echo "$border"
+  echo
+  echo "This script audits AppArmor profiles for security issues"
+  echo "and generates HTML reports for findings against Security Best Practice and"
+  echo "ISA/IEC 62443 compliance status."
+  echo "$border"
+}
+
+print_banner "AppArmor Audit Script"
+
 # Base directory for AppArmor profiles
 PROFILE_BASE_DIR="./apparmor_profiles"
 
