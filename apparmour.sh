@@ -67,32 +67,39 @@ cat <<EOF > "$OUTPUT_FILE"
       text-align: center;
       color: #2c3e50;
       margin-bottom: 20px;
+      font-size: 2em;
+      text-transform: uppercase;
+      letter-spacing: 2px;
     }
     table {
       border-collapse: collapse;
       width: 100%;
-      max-width: 1200px;
+      table-layout: fixed;
       margin: 0 auto;
       background: #ffffff;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      table-layout: fixed;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #ddd;
     }
     th, td {
       padding: 12px 15px;
       text-align: left;
-      border: 1px solid #ddd;
+      border: 1px solid #e0e0e0;
       vertical-align: top;
-      word-wrap: break-word;
+      height: 60px; /* Increased for better readability */
       overflow-wrap: break-word;
-      word-break: break-word;
+      word-break: break-all;
+      font-size: 0.95em;
     }
     th {
-      background: #34495e;
+      background: linear-gradient(90deg, #34495e, #2c3e50);
       color: #ffffff;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
+      position: sticky;
+      top: 0;
     }
     .Medium {
       background: #fff3cd;
@@ -100,12 +107,6 @@ cat <<EOF > "$OUTPUT_FILE"
     .Critical {
       background: #ff4d4d;
       color: #fff;
-    }
-    .High {
-      background: #ffb84d;
-    }
-    .Low {
-      background: #d4edda;
     }
     .Fail {
       color: #dc3545;
@@ -115,23 +116,57 @@ cat <<EOF > "$OUTPUT_FILE"
       color: #28a745;
       font-weight: bold;
     }
+    tr {
+      transition: background 0.3s ease;
+    }
     tr:hover {
-      background-color: #f5f5f5;
+      background: #f8f9fa;
+    }
+    .MatchedLine {
+      font-family: 'Courier New', Courier, monospace;
+      background: #f1f3f5;
+      padding: 6px;
+      border-radius: 6px;
+      overflow-wrap: break-word;
+      word-break: break-all;
     }
     .Remediation {
       font-style: italic;
-      color: #7f8c8d;
+      color: #6c757d;
+      overflow-wrap: break-word;
+      word-break: break-all;
     }
+    /* Column widths */
+    th:nth-child(1), td:nth-child(1) { width: 8%; min-width: 80px; } /* Issue ID */
+    th:nth-child(2), td:nth-child(2) { width: 14%; min-width: 140px; } /* Issue Name */
+    th:nth-child(3), td:nth-child(3) { width: 14%; min-width: 140px; } /* File */
+    th:nth-child(4), td:nth-child(4) { width: 10%; min-width: 100px; } /* Risk */
+    th:nth-child(5), td:nth-child(5) { width: 10%; min-width: 100px; } /* Fix Type */
+    th:nth-child(6), td:nth-child(6) { width: 8%; min-width: 80px; } /* Status */
+    th:nth-child(7), td:nth-child(7) { width: 18%; min-width: 180px; } /* Matched Line */
+    th:nth-child(8), td:nth-child(8) { width: 18%; min-width: 180px; } /* Remediation */
 
-    /* Fixed column widths */
-    th:nth-child(1), td:nth-child(1) { width: 80px; }   /* Issue ID */
-    th:nth-child(2), td:nth-child(2) { width: 150px; }  /* Issue Name */
-    th:nth-child(3), td:nth-child(3) { width: 180px; }  /* File */
-    th:nth-child(4), td:nth-child(4) { width: 90px; }   /* Risk */
-    th:nth-child(5), td:nth-child(5) { width: 100px; }  /* Fix Type */
-    th:nth-child(6), td:nth-child(6) { width: 70px; }   /* Status */
-    th:nth-child(7), td:nth-child(7) { width: 295px; }  /* Matched Line */
-    th:nth-child(8), td:nth-child(8) { width: 195px; }  /* Remediation */
+    /* Media queries */
+    @media screen and (max-width: 768px) {
+      table {
+        font-size: 0.85em;
+      }
+      th, td {
+        padding: 8px 10px;
+        height: 50px;
+      }
+      h1 {
+        font-size: 1.5em;
+      }
+      th:nth-child(1), td:nth-child(1) { width: 10%; min-width: 60px; }
+      th:nth-child(2), td:nth-child(2) { width: 15%; min-width: 100px; }
+      th:nth-child(3), td:nth-child(3) { width: 15%; min-width: 100px; }
+      th:nth-child(4), td:nth-child(4) { width: 10%; min-width: 80px; }
+      th:nth-child(5), td:nth-child(5) { width: 10%; min-width: 80px; }
+      th:nth-child(6), td:nth-child(6) { width: 10%; min-width: 60px; }
+      th:nth-child(7), td:nth-child(7) { width: 15%; min-width: 120px; }
+      th:nth-child(8), td:nth-child(8) { width: 15%; min-width: 120px; }
+    }
   </style>
 </head>
 <body>
@@ -153,23 +188,31 @@ EOF
 declare -A MATCHED
 
 # Recursively find all profile files
-PROFILE_FILES=$(find "$PROFILE_BASE_DIR" -type f)
+PROFILE_FILES=$(find "$PROFILE_BASE_DIR" -type f 2>/dev/null)
 
 for file in $PROFILE_FILES; do
   [ -f "$file" ] || continue
+  [ -r "$file" ] || continue
 
   while IFS= read -r line || [[ -n "$line" ]]; do
     for id in "${!FINDINGS[@]}"; do
       IFS="|" read -r pattern name risk fix remediation <<< "${FINDINGS[$id]}"
       if echo "$line" | grep -qE "$pattern" 2>/dev/null; then
         MATCHED["$id"]=1
-        sanitized_line=$(echo "$line" | sed 's/</\&lt;/g')
+        sanitized_line=$(echo "$line" | sed 's/</\&lt;/g; s/>/\&gt;/g')
         echo "<tr class=\"$risk\">" >> "$OUTPUT_FILE"
-        echo "<td>$id</td><td>$name</td><td>${file}</td><td>$risk</td><td>$fix</td>" >> "$OUTPUT_FILE"
-        echo "<td class=\"Fail\">Fail</td><td>$sanitized_line</td><td>$remediation</td></tr>" >> "$OUTPUT_FILE"
+        echo "  <td>$id</td>" >> "$OUTPUT_FILE"
+        echo "  <td>$name</td>" >> "$OUTPUT_FILE"
+        echo "  <td>$file</td>" >> "$OUTPUT_FILE"
+        echo "  <td>$risk</td>" >> "$OUTPUT_FILE"
+        echo "  <td>$fix</td>" >> "$OUTPUT_FILE"
+        echo "  <td><span class=\"Fail\">Fail</span></td>" >> "$OUTPUT_FILE"
+        echo "  <td class=\"MatchedLine\">$sanitized_line</td>" >> "$OUTPUT_FILE"
+        echo "  <td class=\"Remediation\">$remediation</td>" >> "$OUTPUT_FILE"
+        echo "</tr>" >> "$OUTPUT_FILE"
       fi
     done
-  done < "$file"
+  done < "$file" || continue
 done
 
 # Report passed checks
@@ -177,8 +220,15 @@ for id in "${!FINDINGS[@]}"; do
   if [[ -z "${MATCHED[$id]}" ]]; then
     IFS="|" read -r pattern name risk fix remediation <<< "${FINDINGS[$id]}"
     echo "<tr class=\"$risk\">" >> "$OUTPUT_FILE"
-    echo "<td>$id</td><td>$name</td><td>-</td><td>$risk</td><td>$fix</td>" >> "$OUTPUT_FILE"
-    echo "<td class=\"Pass\">Pass</td><td>-</td><td>$remediation</td></tr>" >> "$OUTPUT_FILE"
+    echo "  <td>$id</td>" >> "$OUTPUT_FILE"
+    echo "  <td>$name</td>" >> "$OUTPUT_FILE"
+    echo "  <td>-</td>" >> "$OUTPUT_FILE"
+    echo "  <td>$risk</td>" >> "$OUTPUT_FILE"
+    echo "  <td>$fix</td>" >> "$OUTPUT_FILE"
+    echo "  <td><span class=\"Pass\">Pass</span></td>" >> "$OUTPUT_FILE"
+    echo "  <td class=\"MatchedLine\">-</td>" >> "$OUTPUT_FILE"
+    echo "  <td class=\"Remediation\">$remediation</td>" >> "$OUTPUT_FILE"
+    echo "</tr>" >> "$OUTPUT_FILE"
   fi
 done
 
