@@ -87,7 +87,7 @@ cat <<EOF > "$OUTPUT_FILE"
       text-align: left;
       border: 1px solid #e0e0e0;
       vertical-align: top;
-      height: 60px; /* Increased for better readability */
+      height: 60px;
       overflow-wrap: break-word;
       word-break: break-all;
       font-size: 0.95em;
@@ -137,27 +137,19 @@ cat <<EOF > "$OUTPUT_FILE"
       word-break: break-all;
     }
     /* Column widths */
-    th:nth-child(1), td:nth-child(1) { width: 8%; min-width: 80px; } /* Issue ID */
-    th:nth-child(2), td:nth-child(2) { width: 14%; min-width: 140px; } /* Issue Name */
-    th:nth-child(3), td:nth-child(3) { width: 14%; min-width: 140px; } /* File */
-    th:nth-child(4), td:nth-child(4) { width: 10%; min-width: 100px; } /* Risk */
-    th:nth-child(5), td:nth-child(5) { width: 10%; min-width: 100px; } /* Fix Type */
-    th:nth-child(6), td:nth-child(6) { width: 8%; min-width: 80px; } /* Status */
-    th:nth-child(7), td:nth-child(7) { width: 18%; min-width: 180px; } /* Matched Line */
-    th:nth-child(8), td:nth-child(8) { width: 18%; min-width: 180px; } /* Remediation */
+    th:nth-child(1), td:nth-child(1) { width: 8%; min-width: 80px; }
+    th:nth-child(2), td:nth-child(2) { width: 14%; min-width: 140px; }
+    th:nth-child(3), td:nth-child(3) { width: 14%; min-width: 140px; }
+    th:nth-child(4), td:nth-child(4) { width: 10%; min-width: 100px; }
+    th:nth-child(5), td:nth-child(5) { width: 10%; min-width: 100px; }
+    th:nth-child(6), td:nth-child(6) { width: 8%; min-width: 80px; }
+    th:nth-child(7), td:nth-child(7) { width: 18%; min-width: 180px; }
+    th:nth-child(8), td:nth-child(8) { width: 18%; min-width: 180px; }
 
-    /* Media queries */
     @media screen and (max-width: 768px) {
-      table {
-        font-size: 0.85em;
-      }
-      th, td {
-        padding: 8px 10px;
-        height: 50px;
-      }
-      h1 {
-        font-size: 1.5em;
-      }
+      table { font-size: 0.85em; }
+      th, td { padding: 8px 10px; height: 50px; }
+      h1 { font-size: 1.5em; }
       th:nth-child(1), td:nth-child(1) { width: 10%; min-width: 60px; }
       th:nth-child(2), td:nth-child(2) { width: 15%; min-width: 100px; }
       th:nth-child(3), td:nth-child(3) { width: 15%; min-width: 100px; }
@@ -255,17 +247,33 @@ cat <<EOF > "$COMPLIANCE_FILE"
   <meta charset="UTF-8">
   <title>Compliance Matrix</title>
   <style>
-    body { font-family: , sans-serif; padding: 16px; background: #f4f4f4; }
-    table { border-collapse: collapse; width: 99%; background: #fff; }
-    th, td { padding: 11px; border: 1px solid #ccc; }
-    th { background-color: #343a40; color: white; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 16px; background: #f4f4f4; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; font-size: 2em; text-transform: uppercase; letter-spacing: 2px; }
+    table { border-collapse: collapse; width: 99%; background: #fff; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); border-radius: 12px; overflow: hidden; border: 1px solid #ddd; }
+    th, td { padding: 12px 15px; border: 1px solid #e0e0e0; vertical-align: top; height: 60px; overflow-wrap: break-word; word-break: break-all; font-size: 0.95em; }
+    th { background: linear-gradient(90deg, #34495e, #2c3e50); color: #ffffff; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; position: sticky; top: 0; }
     .Good { background: #d4edda; }
     .Partial { background: #fff3cd; }
     .Weak { background: #f8d7da; }
+    .chart-container { position: relative; height: 400px; width: 100%; margin: 20px 0; }
+    @media screen and (max-width: 768px) {
+      table { font-size: 0.85em; }
+      th, td { padding: 8px 10px; height: 50px; }
+      h1 { font-size: 1.5em; }
+    }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 <h1>ISA/IEC 62443 Compliance Status</h1>
+
+<div class="chart-container">
+  <canvas id="compliancePieChart"></canvas>
+</div>
+<div class="chart-container">
+  <canvas id="complianceBarChart"></canvas>
+</div>
+
 <table>
   <tr>
     <th>SR ID</th>
@@ -301,6 +309,18 @@ declare -A SR_TITLE=(
   ["SR 7.7"]="Least Functionality"
 )
 
+# Count statuses
+declare -A STATUS_COUNT
+for sr in "${!SR_COMPLIANCE[@]}"; do
+  class=$(status_class "$sr")
+  ((STATUS_COUNT[$class]++))
+done
+
+# Default to 0 if not set
+STATUS_COUNT["Good"]=${STATUS_COUNT["Good"]:-0}
+STATUS_COUNT["Partial"]=${STATUS_COUNT["Partial"]:-0}
+STATUS_COUNT["Weak"]=${STATUS_COUNT["Weak"]:-0}
+
 for sr in "${!SR_COMPLIANCE[@]}"; do
   title="${SR_TITLE[$sr]}"
   checks="${SR_COMPLIANCE[$sr]}"
@@ -310,5 +330,73 @@ for sr in "${!SR_COMPLIANCE[@]}"; do
   echo "<td>$sr</td><td>$title</td><td>$class</td><td>$checks</td><td>$comment</td></tr>" >> "$COMPLIANCE_FILE"
 done
 
-echo "</table></body></html>" >> "$COMPLIANCE_FILE"
+# Executive Summary
+cat <<EOF >> "$COMPLIANCE_FILE"
+</table>
+
+<h2>Executive Summary</h2>
+<p>The compliance audit of AppArmor profiles against ISA/IEC 62443 standards reveals the following:
+- <strong>Good:</strong> ${STATUS_COUNT["Good"]} security requirements are fully compliant.
+- <strong>Partial:</strong> ${STATUS_COUNT["Partial"]} requirements have partial compliance, indicating areas needing attention.
+- <strong>Weak:</strong> ${STATUS_COUNT["Weak"]} requirements are not applicable or lack coverage.
+This summary suggests a solid compliance foundation, with targeted improvements needed for partial and weak areas.</p>
+
+<script>
+  // Pie Chart
+  const ctxPie = document.getElementById('compliancePieChart').getContext('2d');
+  new Chart(ctxPie, {
+    type: 'pie',
+    data: {
+      labels: ['Good', 'Partial', 'Weak'],
+      datasets: [{
+        data: [${STATUS_COUNT["Good"]}, ${STATUS_COUNT["Partial"]}, ${STATUS_COUNT["Weak"]}],
+        backgroundColor: ['#28a745', '#fff3cd', '#f8d7da'],
+        borderColor: ['#ffffff', '#ffffff', '#ffffff'],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: 'Compliance Status Distribution' },
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+
+  // Bar Chart
+  const ctxBar = document.getElementById('complianceBarChart').getContext('2d');
+  new Chart(ctxBar, {
+    type: 'bar',
+    data: {
+      labels: ['Good', 'Partial', 'Weak'],
+      datasets: [{
+        label: 'Compliance Count',
+        data: [${STATUS_COUNT["Good"]}, ${STATUS_COUNT["Partial"]}, ${STATUS_COUNT["Weak"]}],
+        backgroundColor: ['#28a745', '#fff3cd', '#f8d7da'],
+        borderColor: ['#ffffff', '#ffffff', '#ffffff'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: 'Compliance Status Summary' },
+        legend: { position: 'top' }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Number of Requirements' }
+        }
+      }
+    }
+  });
+</script>
+</body>
+</html>
+EOF
+
 echo "[+] Compliance status report saved to $COMPLIANCE_FILE"
